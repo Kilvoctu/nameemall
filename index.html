@@ -402,9 +402,82 @@ footer a { color: var(--text-pinyin); text-decoration: none; }
 
 /* ── Co-Op Mode ── */
 .coop-sticky { padding: 6px 0 4px; border-top: 1px solid var(--border); margin-top: 6px; }
-.coop-score { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.coop-score { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .coop-score .cs-team { color: #34d399; }
 .coop-score .cs-neutral { color: var(--text-dim); }
+.coop-name-input { background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.75rem; padding: 4px 8px; width: 110px; outline: none; }
+.coop-name-input:focus { border-color: var(--accent); }
+.coop-name-input::placeholder { color: var(--text-dim); }
+.coop-members-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 300; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 280px; max-height: 70vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+.coop-members-popup.active { display: block; }
+.coop-members-popup h3 { font-size: 0.95rem; color: var(--text-pinyin); margin-bottom: 12px; text-align: center; }
+.coop-members-popup .cm-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.coop-members-popup .cm-row:last-child { border-bottom: none; }
+.coop-members-popup .cm-name { flex: 1; font-weight: 600; color: var(--text); }
+.coop-members-popup .cm-count { font-weight: 700; color: #34d399; font-variant-numeric: tabular-nums; }
+.coop-members-popup .cm-pokemon { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+
+/* Styles for the enhanced coop members popup */
+.coop-members-popup .cm-member {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.coop-members-popup .cm-member:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.coop-members-popup .cm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+}
+.coop-members-popup .cm-header:hover .cm-name {
+  text-decoration: underline;
+}
+.coop-members-popup .cm-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.coop-members-popup .cm-total {
+  font-weight: 700;
+  color: #34d399;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+.coop-members-popup .cm-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+.coop-members-popup .cm-pokemon-list {
+  display: none;
+  margin-top: 4px;
+}
+.coop-members-popup .cm-pokemon-list.collapsed {
+  display: none;
+}
+.coop-members-popup .cm-pokemon-list.expanded {
+  display: block;
+}
+.coop-members-popup .cm-pokemon-name {
+  display: block;
+  padding: 2px 0;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.coop-members-popup .cm-pokemon-list.loaded {
+  display: block;
+}
+.coop-members-popup .cm-pokemon img { width: 32px; height: 32px; }
 .card.coop-found { border-color: #34d399; box-shadow: 0 0 6px rgba(52,211,153,0.3); }
 .card.coop-found .poke-placeholder { display: none; }
 .card.coop-found .poke-sprite { filter: none; opacity: 1; position: static; }
@@ -414,64 +487,17 @@ footer a { color: var(--text-pinyin); text-decoration: none; }
 </head>
 <body>
 
-<nav class="tab-bar">
-  <button class="tab-btn active" data-tab="pokemon">Regular Mode</button>
-  <button class="tab-btn" data-tab="duel">⚔️ Duel Mode</button>
-  <button class="tab-btn" data-tab="coop">🤝 Co-Op</button>
-</nav>
-
 <header>
-  <div class="title-row">
-    <div class="title">Name<span class="accent">'Em All</span><span class="sub" id="subtitle">Regular Mode</span></div>
-    <div class="stats">
+  <div class="title-row" style="flex-direction: column; align-items: center; gap: 4px;">
+    <div class="title">Name<span class="accent">'Em All</span><span class="sub" id="subtitle">Co-Op Mode</span></div>
+    <div class="stats" style="gap: 12px;">
       <span><span class="num" id="found-count">0</span> / <span class="total" id="total-count">0</span></span>
       <span>Timer: <span class="timer-val" id="timer">00:00</span></span>
-      <button class="btn" id="btn-history" style="padding:3px 10px;font-size:0.65rem;">Scoreboard</button>
     </div>
   </div>
+  <button class="btn" id="btn-theme-toggle" style="position:absolute;top:10px;right:10px;padding:4px 8px;font-size:0.75rem;">🌙</button>
   <div class="input-row">
     <input type="text" id="input-box" placeholder="Type a Pokémon name…" autocomplete="off" autofocus spellcheck="false" />
-  </div>
-  <div class="btn-row" id="action-bar">
-    <button class="btn danger" id="btn-give-up">Give Up</button>
-    <button class="btn" id="btn-reset">Reset</button>
-    <button class="btn" id="btn-pause">⏸ Pause</button>
-    <div class="btn-sep"></div>
-    <div class="settings-wrap">
-      <button class="btn" id="btn-settings" title="Settings">⚙️ Settings</button>
-      <div class="settings-panel" id="settings-panel">
-        <div id="set-order-section">
-        <div class="settings-section-label">Order By</div>
-        <div class="setting-row-slider">
-          <div class="mode-slider" id="mode-slider">
-            <button id="btn-dex-gens" class="active" data-order="dex-gens">Dex + Gens</button>
-            <button id="btn-dex" data-order="dex">Dex</button>
-            <button id="btn-random" data-order="random">Random</button>
-          </div>
-        </div>
-        <div class="settings-divider"></div>
-        </div>
-        <div id="set-gens-section">
-        <div class="settings-section-label">Generations</div>
-        <div class="setting-row-slider" id="reg-gen-selector-wrap"></div>
-        <div class="settings-divider"></div>
-        </div>
-        <div class="setting-row" id="set-sound"><span class="setting-label">Sound (Cries)</span><div class="toggle-switch on" id="tog-sound"></div></div>
-        <div class="setting-row" id="set-shadows"><span class="setting-label">Shadows</span><div class="toggle-switch" id="tog-shadows"></div></div>
-        <div class="setting-row" id="set-cycle"><span class="setting-label">Cycle Forms</span><div class="toggle-switch on" id="tog-cycle"></div></div>
-        <div class="setting-row" id="set-scroll"><span class="setting-label">Auto-scroll</span><div class="toggle-switch on" id="tog-scroll"></div></div>
-        <div class="setting-row" id="set-typebg"><span class="setting-label">Type Backgrounds</span><div class="toggle-switch on" id="tog-typebg"></div></div>
-        <div class="setting-row" id="set-hover"><span class="setting-label">Details on Hover</span><div class="toggle-switch on" id="tog-hover"></div></div>
-        <div class="settings-divider"></div>
-        <div class="settings-section-label">Theme</div>
-        <div class="setting-row-slider">
-          <div class="mode-slider" id="theme-slider">
-            <button id="btn-dark" class="active">🌙 Dark</button>
-            <button id="btn-light">☀️ Light</button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
   <div class="btn-row" id="duel-settings-bar" style="display:none;justify-content:center;">
     <div class="settings-wrap">
@@ -482,14 +508,6 @@ footer a { color: var(--text-pinyin); text-decoration: none; }
         <div class="setting-row" id="dset-scroll"><span class="setting-label">Auto-scroll</span><div class="toggle-switch on" id="dtog-scroll"></div></div>
         <div class="setting-row" id="dset-hover"><span class="setting-label">Details on Hover</span><div class="toggle-switch on" id="dtog-hover"></div></div>
         <div class="setting-row" id="dset-typebg"><span class="setting-label">Type Backgrounds</span><div class="toggle-switch on" id="dtog-typebg"></div></div>
-        <div class="settings-divider"></div>
-        <div class="settings-section-label">Theme</div>
-        <div class="setting-row-slider">
-          <div class="mode-slider" id="duel-theme-slider">
-            <button id="dbtn-dark" class="active">🌙 Dark</button>
-            <button id="dbtn-light">☀️ Light</button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -518,19 +536,13 @@ footer a { color: var(--text-pinyin); text-decoration: none; }
         <div class="setting-row" id="cset-scroll"><span class="setting-label">Auto-scroll</span><div class="toggle-switch on" id="ctog-scroll"></div></div>
         <div class="setting-row" id="cset-hover"><span class="setting-label">Details on Hover</span><div class="toggle-switch on" id="ctog-hover"></div></div>
         <div class="setting-row" id="cset-typebg"><span class="setting-label">Type Backgrounds</span><div class="toggle-switch on" id="ctog-typebg"></div></div>
-        <div class="settings-divider"></div>
-        <div class="settings-section-label">Theme</div>
-        <div class="setting-row-slider">
-          <div class="mode-slider" id="coop-theme-slider">
-            <button id="cbtn-dark" class="active">🌙 Dark</button>
-            <button id="cbtn-light">☀️ Light</button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
   <div class="coop-sticky" id="coop-sticky" style="display:none;">
     <div class="coop-score" id="coop-score-bar">
+      <input type="text" id="coop-name-input" class="coop-name-input" placeholder="Enter name..." />
+      <button class="btn" id="coop-members-btn">Members</button>
       <span class="cs-team">🤝 Team: <span id="cs-found-count">0</span> / <span id="cs-total-count">0</span></span>
       <span class="cs-neutral">Remaining: <span id="cs-remaining-count">0</span></span>
     </div>
@@ -589,6 +601,11 @@ footer a { color: var(--text-pinyin); text-decoration: none; }
   <button class="btn danger" id="disconnect-quit-btn" style="margin-top:12px;font-size:0.8rem;padding:8px 24px;">Quit Room</button>
 </div>
 
+<div class="coop-members-popup" id="coop-members-popup">
+  <h3>Team Members</h3>
+  <div id="coop-members-list"></div>
+</div>
+
 <div class="overlay" id="overlay">
   <div class="modal">
     <h2 id="modal-title">Well done!</h2>
@@ -624,6 +641,7 @@ const Q = (function() {
   let elapsedMs = 0;
   let timerRunning = false;
   let givenUp = false;
+  var pokemonData = null;
   var _savedSettings = {};
   try { _savedSettings = JSON.parse(localStorage.getItem('namemall_settings')) || {}; } catch(e) {}
   let soundEnabled = _savedSettings.sound !== undefined ? _savedSettings.sound : true;
@@ -650,7 +668,6 @@ const Q = (function() {
   let completedRegions = new Set();
   let pokeForms = null;
 
-  // WTP mode state
   let wtpOrder = [];
   let wtpIdx = 0;
   let wtpCorrect = 0;
@@ -806,8 +823,6 @@ const Q = (function() {
     if (el) el.style.display = 'none';
   }
 
-  // ── Highscore ──
-
   function hsKey() { return 'langquiz_hs_' + currentTab; }
 
   function loadHighscore() {
@@ -824,8 +839,6 @@ const Q = (function() {
   }
 
   function displayHighscore() {}
-
-  // ── Score history ──
 
   function histKey(tab) { return 'langquiz_hist_' + tab; }
 
@@ -879,8 +892,6 @@ const Q = (function() {
     renderScoreboard(sbCurrentTab);
     $('sb-overlay').classList.add('active');
   }
-
-  // ── Display helpers ──
 
   function displayMeaning(w) {
     let m = w.m[0].split(';')[0].trim().replace(/^\([^)]*\)\s*/, '');
@@ -954,8 +965,6 @@ const Q = (function() {
       if (onChange) onChange();
     });
   }
-
-  // ── Render grid ──
 
   const REGION_ORDER = ['Kanto','Johto','Hoenn','Sinnoh','Unova','Kalos','Alola','Galar','Paldea'];
   const REGION_GEN = { Kanto:1, Johto:2, Hoenn:3, Sinnoh:4, Unova:5, Kalos:6, Alola:7, Galar:8, Paldea:9 };
@@ -1397,8 +1406,6 @@ const Q = (function() {
     $overlay.classList.add('active');
   }
 
-  // ── Pokemon popup ──
-
   async function fetchPokeDetails(id) {
     if (pokeCache[id]) return pokeCache[id];
     if (!pokeDetails) {
@@ -1487,6 +1494,109 @@ const Q = (function() {
 
   function hidePopup() { $popup.classList.remove('active'); }
 
+function showCoopMembersPopup() {
+  const popup = $('coop-members-popup');
+  const list = $('coop-members-list');
+  
+  list.innerHTML = '';
+  
+  for (const name in coopMembers) {
+    if (!coopMembers[name] || coopMembers[name].length === 0) continue;
+    if (name === coopMyName) continue;
+    
+    const pokemonNames = coopMembers[name].map(id => {
+      const pokemon = items.find(p => p.id === id);
+      return pokemon ? pokemon.n : '';
+    }).filter(name => name);
+    
+    const item = document.createElement('div');
+    item.className = 'cm-member';
+    item.innerHTML = `
+      <div class="cm-header">
+        <div class="cm-name">${name}</div>
+        <div class="cm-total">Total: ${coopMembers[name].length}</div>
+      </div>
+      <div class="cm-separator"></div>
+      <div class="cm-pokemon-list collapsed">
+        ${pokemonNames.map(name => `<div class="cm-pokemon-name">${name}</div>`).join('')}
+      </div>
+    `;
+    list.appendChild(item);
+  }
+  
+  if (coopMyName && coopMembers[coopMyName] && coopMembers[coopMyName].length > 0) {
+    const pokemonNames = coopMembers[coopMyName].map(id => {
+      const pokemon = items.find(p => p.id === id);
+      return pokemon ? pokemon.n : '';
+    }).filter(name => name);
+    
+    const item = document.createElement('div');
+    item.className = 'cm-member';
+    item.innerHTML = `
+      <div class="cm-header">
+        <div class="cm-name">${coopMyName}</div>
+        <div class="cm-total">Total: ${coopMembers[coopMyName].length}</div>
+      </div>
+      <div class="cm-separator"></div>
+      <div class="cm-pokemon-list collapsed">
+        ${pokemonNames.map(name => `<div class="cm-pokemon-name">${name}</div>`).join('')}
+      </div>
+    `;
+    list.appendChild(item);
+  }
+  
+  const attributedIds = new Set();
+  for (const name in coopMembers) {
+    if (coopMembers[name]) {
+      coopMembers[name].forEach(id => attributedIds.add(id));
+    }
+  }
+  
+  const anonymousIds = [];
+  coopRevealed.forEach(idx => {
+    const id = items[idx].id;
+    if (!attributedIds.has(id)) {
+      anonymousIds.push(id);
+    }
+  });
+  
+  if (anonymousIds.length > 0) {
+    const pokemonNames = anonymousIds.map(id => {
+      const pokemon = items.find(p => p.id === id);
+      return pokemon ? pokemon.n : '';
+    }).filter(name => name);
+    
+    const item = document.createElement('div');
+    item.className = 'cm-member';
+    item.innerHTML = `
+      <div class="cm-header">
+        <div class="cm-name">Anonymous</div>
+        <div class="cm-total">Total: ${anonymousIds.length}</div>
+      </div>
+      <div class="cm-separator"></div>
+      <div class="cm-pokemon-list collapsed">
+        ${pokemonNames.map(name => `<div class="cm-pokemon-name">${name}</div>`).join('')}
+      </div>
+    `;
+    list.appendChild(item);
+  }
+   
+  list.querySelectorAll('.cm-header').forEach(header => {
+    header.addEventListener('click', function() {
+      const pokemonList = this.parentElement.querySelector('.cm-pokemon-list');
+      if (pokemonList.classList.contains('expanded')) {
+        pokemonList.classList.remove('expanded');
+        pokemonList.classList.add('collapsed');
+      } else {
+        pokemonList.classList.remove('collapsed');
+        pokemonList.classList.add('expanded');
+      }
+    });
+  });
+  
+  popup.classList.add('active');
+}
+
   document.addEventListener('mousemove', function(e) {
     mouseX = e.clientX;
     mouseY = e.clientY;
@@ -1535,8 +1645,6 @@ const Q = (function() {
     window.open('https://bulbapedia.bulbagarden.net/wiki/' + bulbaName, '_blank');
   });
 
-  // ── Save / Load ──
-
   function saveKey() { return 'langquiz_' + currentTab; }
   function save() { localStorage.setItem(saveKey(), JSON.stringify({ f: Array.from(foundSet), e: elapsedMs, o: displayOrder, g: Array.from(selectedGens), gu: givenUp || undefined })); }
   function load() {
@@ -1549,8 +1657,6 @@ const Q = (function() {
     } catch(e) {}
     return false;
   }
-
-  // ── Actions ──
 
   function giveUp() {
     if (givenUp) return;
@@ -1565,7 +1671,7 @@ const Q = (function() {
     if (foundSet.size > 0 && !confirm('Reset? All progress will be lost.')) return;
     givenUp = false; foundSet = new Set(); elapsedMs = 0; completedFamilies = new Set(); completedRegions = new Set();
     orderMode = 'dex-gens';
-    $('mode-slider').querySelectorAll('button').forEach(function(b) { b.classList.toggle('active', b.dataset.order === 'dex-gens'); });
+    $('mode-slider')?.querySelectorAll('button').forEach(function(b) { b.classList.toggle('active', b.dataset.order === 'dex-gens'); });
     stopTimer(); timerRunning = false; $timer.textContent = '00:00';
     if (typeof paused !== 'undefined' && paused) { paused = false; $('pause-overlay').classList.remove('active'); $('btn-pause').textContent = '⏸ Pause'; }
     $input.value = ''; $input.disabled = false;
@@ -1582,7 +1688,7 @@ const Q = (function() {
     } else {
       displayOrder = items.map((_, i) => i);
     }
-    $('mode-slider').querySelectorAll('button').forEach(function(b) { b.classList.toggle('active', b.dataset.order === mode); });
+    $('mode-slider')?.querySelectorAll('button').forEach(function(b) { b.classList.toggle('active', b.dataset.order === mode); });
     saveSettings();
     renderGrid();
     restoreRevealed();
@@ -1598,8 +1704,6 @@ const Q = (function() {
       }
     }
   }
-
-  // ── Who's That Pokemon mode ──
 
   function wtpActivate(data) {
     items = data;
@@ -1748,8 +1852,6 @@ const Q = (function() {
     }
   }
 
-  // ── Room Session (reconnection support) ──
-
   var ROOM_SESSION_KEY = 'nea-room-session';
   var ROOM_SESSION_TTL = 30 * 60 * 1000;
   var disconnectWaiting = false;
@@ -1846,17 +1948,15 @@ const Q = (function() {
     if (c) try { c.send({ type: 'bye' }); } catch(e) {}
   });
 
-  // ── Duel Mode ──
-
   var duelRoomId = null;
   let duelPeer = null;
   let duelConn = null;
-  let duelRole = null; // 'blue' (host) or 'red' (guest)
+  let duelRole = null;
   let duelActive = false;
-  let duelBlue = new Set(); // indices revealed by blue
-  let duelRed = new Set(); // indices revealed by red
-  let duelMyRevealed = new Set(); // indices I've typed correctly
-  let duelOwner = {}; // idx -> 'blue'|'red' (first revealer)
+  let duelBlue = new Set();
+  let duelRed = new Set();
+  let duelMyRevealed = new Set();
+  let duelOwner = {};
   let duelFinishMe = false;
   let duelFinishOpponent = false;
 
@@ -2331,7 +2431,7 @@ const Q = (function() {
       duelSettings.timerMs = msg.timerMs || 0;
       duelSettings.gens = new Set(msg.gens || [1,2,3,4,5,6,7,8,9]);
       shadowsEnabled = msg.shadows;
-      $('tog-shadows').classList.toggle('on', shadowsEnabled);
+      $('tog-shadows')?.classList.toggle('on', shadowsEnabled);
       var receivedOrder = msg.order;
       if (duelRole === 'red') {
         const cached = dataSources['pokemon'];
@@ -2368,7 +2468,6 @@ const Q = (function() {
     } else if (msg.type === 'resume') {
       applyMultiPause('duel', false);
     } else if (msg.type === 'join') {
-      // guest joined, handled in connection event
     } else if (msg.type === 'rejoin') {
       var countdownRem = 0;
       if (countdownInterval && countdownEndTime) countdownRem = Math.max(0, countdownEndTime - Date.now());
@@ -2527,8 +2626,6 @@ const Q = (function() {
     else fetch('pokemon.json').then(function(r) { return r.json(); }).then(render);
   }
 
-  // ── Co-Op Mode ──
-
   var coopRoomId = null;
   let coopActive = false;
   let coopPeer = null;
@@ -2537,6 +2634,8 @@ const Q = (function() {
   let coopRevealed = new Set();
   let coopFinishMe = false;
   let coopFinishOpponent = false;
+  let coopMyName = '';
+  let coopMembers = {};
   var coopSettings = { shadows: false, orderMode: 'dex-gens', timerMs: 0, gens: new Set([1,2,3,4,5,6,7,8,9]) };
   var coopConnTimeout = null;
 
@@ -2936,53 +3035,60 @@ const Q = (function() {
     addFormToggle(c, w);
   }
 
-  function coopHandleInput(val) {
-    if (!coopActive) return;
-    const matches = findAllMatches(val);
-    if (matches.length > 0) {
-      var newReveals = [];
-      for (const idx of matches) {
-        if (coopRevealed.has(idx)) continue;
-        coopRevealed.add(idx);
-        coopRevealCard(idx);
-        newReveals.push(idx);
-      }
-      if (newReveals.length > 0) {
-        var prevMine = document.querySelector('.card.coop-last-mine');
-        if (prevMine) prevMine.classList.remove('coop-last-mine');
-        var lastCard = $('c' + newReveals[newReveals.length - 1]);
-        if (lastCard) lastCard.classList.add('coop-last-mine');
-        coopConn.send({ type: 'reveal', indices: newReveals });
-        for (var ri = 0; ri < newReveals.length; ri++) toast(items[newReveals[ri]]);
-        if (soundEnabled) playCry(items[newReveals[0]].id);
-        checkFamilyComplete(newReveals.map(function(i) { return items[i].id; }));
-        checkRegionComplete();
-        coopUpdateScore();
-        flashInput();
-        $input.value = '';
-        if (autoScrollEnabled) setTimeout(function() {
-          var card = $('c' + newReveals[0]);
-          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 50);
-        if (coopRevealed.size === items.length) { stopTimer(); coopEnd(); }
-      } else {
-        var q = val.toLowerCase().trim();
-        if (!hasAnyExtension(q)) {
-          toastDupe(items[matches[0]]);
-          flashInputDupe();
-          $input.value = '';
+function coopHandleInput(val) {
+  if (!coopActive) return;
+  const matches = findAllMatches(val);
+  if (matches.length > 0) {
+    var newReveals = [];
+    for (const idx of matches) {
+      if (coopRevealed.has(idx)) continue;
+      coopRevealed.add(idx);
+      coopRevealCard(idx);
+      newReveals.push(idx);
+      
+      if (coopMyName) {
+        if (!coopMembers[coopMyName]) {
+          coopMembers[coopMyName] = [];
         }
+        coopMembers[coopMyName].push(items[idx].id);
       }
-    } else if (val.length > 0) {
+    }
+    if (newReveals.length > 0) {
+      var prevMine = document.querySelector('.card.coop-last-mine');
+      if (prevMine) prevMine.classList.remove('coop-last-mine');
+      var lastCard = $('c' + newReveals[newReveals.length - 1]);
+      if (lastCard) lastCard.classList.add('coop-last-mine');
+       wsSend({ type: 'guess', input: val, userName: coopMyName });
+      for (var ri = 0; ri < newReveals.length; ri++) toast(items[newReveals[ri]]);
+      if (soundEnabled) playCry(items[newReveals[0]].id);
+      checkFamilyComplete(newReveals.map(function(i) { return items[i].id; }));
+      checkRegionComplete();
+      coopUpdateScore();
+      flashInput();
+      $input.value = '';
+      if (autoScrollEnabled) setTimeout(function() {
+        var card = $('c' + newReveals[0]);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      if (coopRevealed.size === items.length) { stopTimer(); coopEnd(); }
+    } else {
       var q = val.toLowerCase().trim();
-      var outsidePoke = isOutsideSelectedGens(q);
-      if (outsidePoke) {
-        toastOutsideGen(outsidePoke);
+      if (!hasAnyExtension(q)) {
+        toastDupe(items[matches[0]]);
         flashInputDupe();
         $input.value = '';
       }
     }
+  } else if (val.length > 0) {
+    var q = val.toLowerCase().trim();
+    var outsidePoke = isOutsideSelectedGens(q);
+    if (outsidePoke) {
+      toastOutsideGen(outsidePoke);
+      flashInputDupe();
+      $input.value = '';
+    }
   }
+}
 
   function coopOnMessage(msg) {
     if (handleHeartbeatMsg(msg)) return;
@@ -3039,7 +3145,6 @@ const Q = (function() {
     } else if (msg.type === 'resume') {
       applyMultiPause('coop', false);
     } else if (msg.type === 'join') {
-      // guest joined
     } else if (msg.type === 'rejoin') {
       var countdownRem = 0;
       if (countdownInterval && countdownEndTime) countdownRem = Math.max(0, countdownEndTime - Date.now());
@@ -3187,8 +3292,6 @@ const Q = (function() {
     else fetch('pokemon.json').then(function(r) { return r.json(); }).then(render);
   }
 
-  // ── Tab switching ──
-
   function switchTab(tab) {
     if (tab === currentTab && items.length) return;
     if (currentTab === 'pokemon' && foundSet.size > 0 && !givenUp) {
@@ -3227,20 +3330,20 @@ const Q = (function() {
     $input.placeholder = 'Type a Pokémon name…';
     if (!isPoke && !isMulti) stopCycleForms();
     else if (cycleFormsEnabled && isPoke) startCycleForms();
-    $('set-order-section').style.display = isMulti ? 'none' : '';
-    $('set-gens-section').style.display = isPoke ? '' : 'none';
-    $('set-sound').style.display = (isPoke || isCoop) ? '' : 'none';
-    $('set-shadows').style.display = isPoke ? '' : 'none';
-    $('set-cycle').style.display = (isPoke || isCoop) ? '' : 'none';
-    $('set-scroll').style.display = isMulti ? 'none' : '';
-    $('set-typebg').style.display = isMulti ? 'none' : '';
+    if ($('set-order-section')) $('set-order-section').style.display = isMulti ? 'none' : '';
+    if ($('set-gens-section')) $('set-gens-section').style.display = isPoke ? '' : 'none';
+    if ($('set-sound')) $('set-sound').style.display = (isPoke || isCoop) ? '' : 'none';
+    if ($('set-shadows')) $('set-shadows').style.display = isPoke ? '' : 'none';
+    if ($('set-cycle')) $('set-cycle').style.display = (isPoke || isCoop) ? '' : 'none';
+    if ($('set-scroll')) $('set-scroll').style.display = isMulti ? 'none' : '';
+    if ($('set-typebg')) $('set-typebg').style.display = isMulti ? 'none' : '';
 
     $('action-bar').style.display = isMulti ? 'none' : '';
     $('duel-settings-bar').style.display = 'none';
     $('duel-sticky').style.display = 'none';
     $('coop-settings-bar').style.display = 'none';
     $('coop-sticky').style.display = 'none';
-    $('btn-history').style.display = isDuel ? 'none' : '';
+    if ($('btn-history')) $('btn-history').style.display = isDuel ? 'none' : '';
 
     if ((isPoke || isMulti) && !pokeFamilies) {
       fetch('families.json').then(r => r.json()).then(fams => {
@@ -3274,7 +3377,6 @@ const Q = (function() {
     }
 
     if (isCoop) {
-      coopShowLobby();
       return;
     }
 
@@ -3327,8 +3429,6 @@ const Q = (function() {
     if (!givenUp) $input.focus();
   }
 
-  // ── Input handler ──
-
   $input.addEventListener('input', function() {
     const val = this.value.trim();
     if (!timerRunning && !givenUp && val.length > 0) startTimer();
@@ -3377,17 +3477,17 @@ const Q = (function() {
 
   $input.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') { this.value = ''; }
+    if (e.key === 'Enter' && coopActive) {
+      var val = this.value.trim();
+       if (val) wsSend({ type: 'guess', input: val, userName: coopMyName });
+      this.value = '';
+    }
   });
 
   document.addEventListener('keydown', function(e) {
     if (currentTab !== 'wtp') return;
     if (e.key === 'Enter' && wtpRevealed && wtpGenGuessed) { wtpNext(); }
   });
-
-  // ── Button wiring ──
-
-  $('btn-give-up').addEventListener('click', giveUp);
-  $('btn-reset').addEventListener('click', reset);
 
   var paused = false;
   function togglePause() {
@@ -3397,12 +3497,12 @@ const Q = (function() {
       stopTimer();
       $input.disabled = true;
       $('pause-overlay').classList.add('active');
-      $('btn-pause').textContent = '▶ Resume';
+      var pauseBtn = $('btn-pause'); if (pauseBtn) pauseBtn.textContent = '▶ Resume';
     } else {
       startTimer();
       $input.disabled = false;
       $('pause-overlay').classList.remove('active');
-      $('btn-pause').textContent = '⏸ Pause';
+      var pauseBtn = $('btn-pause'); if (pauseBtn) pauseBtn.textContent = '⏸ Pause';
       $input.focus();
     }
   }
@@ -3434,7 +3534,7 @@ const Q = (function() {
     if (conn) conn.send({ type: newState ? 'pause' : 'resume' });
   }
 
-  $('btn-pause').addEventListener('click', togglePause);
+  $('btn-pause')?.addEventListener('click', togglePause);
   $('pause-overlay').addEventListener('click', function() {
     if (!paused || disconnectWaiting) return;
     if (currentTab === 'duel' || currentTab === 'coop') {
@@ -3465,40 +3565,45 @@ const Q = (function() {
       switchTab('coop');
     }
   });
-  $('mode-slider').addEventListener('click', function(e) {
+  $('mode-slider')?.addEventListener('click', function(e) {
     var btn = e.target.closest('button');
     if (!btn || !btn.dataset.order) return;
     setOrderMode(btn.dataset.order);
   });
 
-  $('btn-settings').addEventListener('click', function(e) {
+  $('btn-settings')?.addEventListener('click', function(e) {
     e.stopPropagation();
-    $('settings-panel').classList.toggle('open');
-    $('duel-settings-panel').classList.remove('open');
-    $('coop-settings-panel').classList.remove('open');
+    $('settings-panel')?.classList.toggle('open');
+    $('duel-settings-panel')?.classList.remove('open');
+    $('coop-settings-panel')?.classList.remove('open');
   });
-  $('btn-duel-settings').addEventListener('click', function(e) {
+  $('btn-duel-settings')?.addEventListener('click', function(e) {
     e.stopPropagation();
-    $('duel-settings-panel').classList.toggle('open');
-    $('settings-panel').classList.remove('open');
-    $('coop-settings-panel').classList.remove('open');
+    $('duel-settings-panel')?.classList.toggle('open');
+    $('settings-panel')?.classList.remove('open');
+    $('coop-settings-panel')?.classList.remove('open');
   });
-  $('btn-coop-settings').addEventListener('click', function(e) {
+  $('btn-coop-settings')?.addEventListener('click', function(e) {
     e.stopPropagation();
-    $('coop-settings-panel').classList.toggle('open');
-    $('settings-panel').classList.remove('open');
-    $('duel-settings-panel').classList.remove('open');
+    $('coop-settings-panel')?.classList.toggle('open');
+    $('settings-panel')?.classList.remove('open');
+    $('duel-settings-panel')?.classList.remove('open');
   });
-  document.addEventListener('click', function(e) {
-    if (!e.target.closest('.settings-wrap')) {
-      $('settings-panel').classList.remove('open');
-      $('duel-settings-panel').classList.remove('open');
-      $('coop-settings-panel').classList.remove('open');
-    }
-  });
+   document.addEventListener('click', function(e) {
+     if (!e.target.closest('.settings-wrap')) {
+       $('settings-panel')?.classList.remove('open');
+       $('duel-settings-panel')?.classList.remove('open');
+       $('coop-settings-panel')?.classList.remove('open');
+      }
+      if (!e.target.closest('.coop-members-popup') && !e.target.closest('#coop-members-btn')) {
+       $('coop-members-popup')?.classList.remove('active');
+     }
+   });
 
   function initRegGenSelector() {
-    $('reg-gen-selector-wrap').innerHTML = buildGenSelectorHTML('reg', selectedGens);
+    var el = $('reg-gen-selector-wrap');
+    if (!el) return;
+    el.innerHTML = buildGenSelectorHTML('reg', selectedGens);
     wireGenSelector('reg', selectedGens, onRegGenChange);
   }
   function onRegGenChange() {
@@ -3519,128 +3624,240 @@ const Q = (function() {
   initRegGenSelector();
 
   function syncSoundToggles() {
-    $('tog-sound').classList.toggle('on', soundEnabled);
-    $('dtog-sound').classList.toggle('on', soundEnabled);
-    $('ctog-sound').classList.toggle('on', soundEnabled);
+    $('tog-sound')?.classList.toggle('on', soundEnabled);
+    $('dtog-sound')?.classList.toggle('on', soundEnabled);
+    $('ctog-sound')?.classList.toggle('on', soundEnabled);
   }
-  $('set-sound').addEventListener('click', function() {
+  $('set-sound')?.addEventListener('click', function() {
     soundEnabled = !soundEnabled; syncSoundToggles(); saveSettings();
   });
-  $('dset-sound').addEventListener('click', function() {
+  $('dset-sound')?.addEventListener('click', function() {
     soundEnabled = !soundEnabled; syncSoundToggles(); saveSettings();
   });
-  $('cset-sound').addEventListener('click', function() {
+  $('cset-sound')?.addEventListener('click', function() {
     soundEnabled = !soundEnabled; syncSoundToggles(); saveSettings();
   });
-
-  $('set-shadows').addEventListener('click', function() {
+  $('set-shadows')?.addEventListener('click', function() {
     shadowsEnabled = !shadowsEnabled;
-    $('tog-shadows').classList.toggle('on', shadowsEnabled);
-    $('grid-wrap').classList.toggle('shadows-on', shadowsEnabled);
+    $('tog-shadows')?.classList.toggle('on', shadowsEnabled);
+    $('grid-wrap')?.classList.toggle('shadows-on', shadowsEnabled);
     saveSettings();
   });
-
+  $('set-cycle')?.addEventListener('click', function() {
+    cycleFormsEnabled = !cycleFormsEnabled;
+    $('tog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    $('dtog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    $('ctog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    saveSettings();
+    if (cycleFormsEnabled) startCycleForms(); else stopCycleForms();
+  });
+  $('dset-cycle')?.addEventListener('click', function() {
+    cycleFormsEnabled = !cycleFormsEnabled;
+    $('tog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    $('dtog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    $('ctog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    saveSettings();
+    if (cycleFormsEnabled) startCycleForms(); else stopCycleForms();
+  });
+  $('cset-cycle')?.addEventListener('click', function() {
+    cycleFormsEnabled = !cycleFormsEnabled;
+    $('tog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    $('dtog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    $('ctog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    saveSettings();
+    if (cycleFormsEnabled) startCycleForms(); else stopCycleForms();
+  });
+  $('set-scroll')?.addEventListener('click', function() {
+    autoScrollEnabled = !autoScrollEnabled;
+    $('tog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    $('dtog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    $('ctog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    saveSettings();
+  });
+  $('dset-scroll')?.addEventListener('click', function() {
+    autoScrollEnabled = !autoScrollEnabled;
+    $('tog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    $('dtog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    $('ctog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    saveSettings();
+  });
+  $('cset-scroll')?.addEventListener('click', function() {
+    autoScrollEnabled = !autoScrollEnabled;
+    $('tog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    $('dtog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    $('ctog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    saveSettings();
+  });
+  $('set-typebg')?.addEventListener('click', function() {
+    typeBgEnabled = !typeBgEnabled;
+    $('tog-typebg')?.classList.toggle('on', typeBgEnabled);
+    $('dtog-typebg')?.classList.toggle('on', typeBgEnabled);
+    $('ctog-typebg')?.classList.toggle('on', typeBgEnabled);
+    saveSettings();
+    refreshTypeBgs();
+  });
+  $('dset-typebg')?.addEventListener('click', function() {
+    typeBgEnabled = !typeBgEnabled;
+    $('tog-typebg')?.classList.toggle('on', typeBgEnabled);
+    $('dtog-typebg')?.classList.toggle('on', typeBgEnabled);
+    $('ctog-typebg')?.classList.toggle('on', typeBgEnabled);
+    saveSettings();
+    refreshTypeBgs();
+  });
+  $('cset-typebg')?.addEventListener('click', function() {
+    typeBgEnabled = !typeBgEnabled;
+    $('tog-typebg')?.classList.toggle('on', typeBgEnabled);
+    $('dtog-typebg')?.classList.toggle('on', typeBgEnabled);
+    $('ctog-typebg')?.classList.toggle('on', typeBgEnabled);
+    saveSettings();
+    refreshTypeBgs();
+  });
+  $('set-hover')?.addEventListener('click', function() {
+    hoverEnabled = !hoverEnabled;
+    $('tog-hover')?.classList.toggle('on', hoverEnabled);
+    $('dtog-hover')?.classList.toggle('on', hoverEnabled);
+    $('ctog-hover')?.classList.toggle('on', hoverEnabled);
+    saveSettings();
+  });
+  $('dset-hover')?.addEventListener('click', function() {
+    hoverEnabled = !hoverEnabled;
+    $('tog-hover')?.classList.toggle('on', hoverEnabled);
+    $('dtog-hover')?.classList.toggle('on', hoverEnabled);
+    $('ctog-hover')?.classList.toggle('on', hoverEnabled);
+    saveSettings();
+  });
+  $('cset-hover')?.addEventListener('click', function() {
+    hoverEnabled = !hoverEnabled;
+    $('tog-hover')?.classList.toggle('on', hoverEnabled);
+    $('dtog-hover')?.classList.toggle('on', hoverEnabled);
+    $('ctog-hover')?.classList.toggle('on', hoverEnabled);
+    saveSettings();
+  });
   function syncCycleToggles() {
-    $('tog-cycle').classList.toggle('on', cycleFormsEnabled);
-    $('dtog-cycle').classList.toggle('on', cycleFormsEnabled);
-    $('ctog-cycle').classList.toggle('on', cycleFormsEnabled);
+    $('tog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    $('dtog-cycle')?.classList.toggle('on', cycleFormsEnabled);
+    $('ctog-cycle')?.classList.toggle('on', cycleFormsEnabled);
   }
-  $('set-cycle').addEventListener('click', function() {
+  $('set-cycle')?.addEventListener('click', function() {
     cycleFormsEnabled = !cycleFormsEnabled; syncCycleToggles();
     if (cycleFormsEnabled) startCycleForms(); else stopCycleForms();
     saveSettings();
   });
-  $('dset-cycle').addEventListener('click', function() {
+  $('dset-cycle')?.addEventListener('click', function() {
     cycleFormsEnabled = !cycleFormsEnabled; syncCycleToggles();
     if (cycleFormsEnabled) startCycleForms(); else stopCycleForms();
     saveSettings();
   });
-  $('cset-cycle').addEventListener('click', function() {
+  $('cset-cycle')?.addEventListener('click', function() {
     cycleFormsEnabled = !cycleFormsEnabled; syncCycleToggles();
     if (cycleFormsEnabled) startCycleForms(); else stopCycleForms();
     saveSettings();
   });
 
   function syncScrollToggles() {
-    $('tog-scroll').classList.toggle('on', autoScrollEnabled);
-    $('dtog-scroll').classList.toggle('on', autoScrollEnabled);
-    $('ctog-scroll').classList.toggle('on', autoScrollEnabled);
+    $('tog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    $('dtog-scroll')?.classList.toggle('on', autoScrollEnabled);
+    $('ctog-scroll')?.classList.toggle('on', autoScrollEnabled);
   }
-  $('set-scroll').addEventListener('click', function() {
+  $('set-scroll')?.addEventListener('click', function() {
     autoScrollEnabled = !autoScrollEnabled; syncScrollToggles(); saveSettings();
   });
-  $('dset-scroll').addEventListener('click', function() {
+  $('dset-scroll')?.addEventListener('click', function() {
     autoScrollEnabled = !autoScrollEnabled; syncScrollToggles(); saveSettings();
   });
-  $('cset-scroll').addEventListener('click', function() {
+  $('cset-scroll')?.addEventListener('click', function() {
     autoScrollEnabled = !autoScrollEnabled; syncScrollToggles(); saveSettings();
   });
 
   function syncTypeBgToggles() {
-    $('tog-typebg').classList.toggle('on', typeBgEnabled);
-    $('dtog-typebg').classList.toggle('on', typeBgEnabled);
-    $('ctog-typebg').classList.toggle('on', typeBgEnabled);
+    $('tog-typebg')?.classList.toggle('on', typeBgEnabled);
+    $('dtog-typebg')?.classList.toggle('on', typeBgEnabled);
+    $('ctog-typebg')?.classList.toggle('on', typeBgEnabled);
   }
-  $('set-typebg').addEventListener('click', function() {
+  $('set-typebg')?.addEventListener('click', function() {
     typeBgEnabled = !typeBgEnabled; syncTypeBgToggles(); refreshTypeBgs(); saveSettings();
   });
-  $('dset-typebg').addEventListener('click', function() {
+  $('dset-typebg')?.addEventListener('click', function() {
     typeBgEnabled = !typeBgEnabled; syncTypeBgToggles(); refreshTypeBgs(); saveSettings();
   });
-  $('cset-typebg').addEventListener('click', function() {
+  $('cset-typebg')?.addEventListener('click', function() {
     typeBgEnabled = !typeBgEnabled; syncTypeBgToggles(); refreshTypeBgs(); saveSettings();
   });
 
   function syncHoverToggles() {
-    $('tog-hover').classList.toggle('on', hoverEnabled);
-    $('dtog-hover').classList.toggle('on', hoverEnabled);
-    $('ctog-hover').classList.toggle('on', hoverEnabled);
+    $('tog-hover')?.classList.toggle('on', hoverEnabled);
+    $('dtog-hover')?.classList.toggle('on', hoverEnabled);
+    $('ctog-hover')?.classList.toggle('on', hoverEnabled);
   }
-  $('set-hover').addEventListener('click', function() {
+  $('set-hover')?.addEventListener('click', function() {
     hoverEnabled = !hoverEnabled; syncHoverToggles(); if (!hoverEnabled) hidePopup(); saveSettings();
   });
-  $('dset-hover').addEventListener('click', function() {
+  $('dset-hover')?.addEventListener('click', function() {
     hoverEnabled = !hoverEnabled; syncHoverToggles(); if (!hoverEnabled) hidePopup(); saveSettings();
   });
-  $('cset-hover').addEventListener('click', function() {
+  $('cset-hover')?.addEventListener('click', function() {
     hoverEnabled = !hoverEnabled; syncHoverToggles(); if (!hoverEnabled) hidePopup(); saveSettings();
   });
 
   function setTheme(mode) {
     document.body.classList.toggle('light', mode === 'light');
-    $('btn-dark').classList.toggle('active', mode === 'dark');
-    $('btn-light').classList.toggle('active', mode === 'light');
-    $('dbtn-dark').classList.toggle('active', mode === 'dark');
-    $('dbtn-light').classList.toggle('active', mode === 'light');
-    $('cbtn-dark').classList.toggle('active', mode === 'dark');
-    $('cbtn-light').classList.toggle('active', mode === 'light');
+    $('btn-dark')?.classList.toggle('active', mode === 'dark');
+    $('btn-light')?.classList.toggle('active', mode === 'light');
+    $('dbtn-dark')?.classList.toggle('active', mode === 'dark');
+    $('dbtn-light')?.classList.toggle('active', mode === 'light');
+    $('cbtn-dark')?.classList.toggle('active', mode === 'dark');
+    $('cbtn-light')?.classList.toggle('active', mode === 'light');
     localStorage.setItem('namemall_theme', mode);
+    
+    var themeBtn = $('btn-theme-toggle');
+    if (themeBtn) themeBtn.textContent = mode === 'dark' ? '🌙' : '☀️';
   }
-  $('btn-dark').addEventListener('click', function() { setTheme('dark'); });
-  $('btn-light').addEventListener('click', function() { setTheme('light'); });
-  $('dbtn-dark').addEventListener('click', function() { setTheme('dark'); });
-  $('dbtn-light').addEventListener('click', function() { setTheme('light'); });
-  $('cbtn-dark').addEventListener('click', function() { setTheme('dark'); });
-  $('cbtn-light').addEventListener('click', function() { setTheme('light'); });
+  
+  $('btn-theme-toggle')?.addEventListener('click', function() {
+    var isDark = !document.body.classList.contains('light');
+    setTheme(isDark ? 'light' : 'dark');
+  });
+
+  $('btn-dark')?.addEventListener('click', function() { setTheme('dark'); });
+  $('btn-light')?.addEventListener('click', function() { setTheme('light'); });
+  $('dbtn-dark')?.addEventListener('click', function() { setTheme('dark'); });
+  $('dbtn-light')?.addEventListener('click', function() { setTheme('light'); });
+  $('cbtn-dark')?.addEventListener('click', function() { setTheme('dark'); });
+  $('cbtn-light')?.addEventListener('click', function() { setTheme('light'); });
   syncSoundToggles();
-  $('tog-shadows').classList.toggle('on', shadowsEnabled);
+  $('tog-shadows')?.classList.toggle('on', shadowsEnabled);
   syncCycleToggles();
   syncScrollToggles();
   syncTypeBgToggles();
   syncHoverToggles();
-  $('mode-slider').querySelectorAll('button').forEach(function(b) { b.classList.toggle('active', b.dataset.order === orderMode); });
+  $('mode-slider')?.querySelectorAll('button').forEach(function(b) { b.classList.toggle('active', b.dataset.order === orderMode); });
 
   if (localStorage.getItem('namemall_theme') === 'light') {
     document.body.classList.add('light');
-    $('btn-light').classList.add('active');
-    $('btn-dark').classList.remove('active');
-    $('dbtn-light').classList.add('active');
-    $('dbtn-dark').classList.remove('active');
-    $('cbtn-light').classList.add('active');
-    $('cbtn-dark').classList.remove('active');
+    $('btn-light')?.classList.add('active');
+    $('btn-dark')?.classList.remove('active');
+    $('dbtn-light')?.classList.add('active');
+    $('dbtn-dark')?.classList.remove('active');
+    $('cbtn-light')?.classList.add('active');
+    $('cbtn-dark')?.classList.remove('active');
+    var themeBtn = $('btn-theme-toggle');
+    if (themeBtn) themeBtn.textContent = '☀️';
+  } else {
+    var themeBtn = $('btn-theme-toggle');
+    if (themeBtn) themeBtn.textContent = '🌙';
   }
+  try {
+    coopMyName = localStorage.getItem('coopMyName') || '';
+    if ($('coop-name-input')) $('coop-name-input').value = coopMyName;
+  } catch(e) {}
 
-  $('btn-history').addEventListener('click', openScoreboard);
+  $('coop-members-btn')?.addEventListener('click', showCoopMembersPopup);
+
+  $('coop-name-input')?.addEventListener('input', function(e) {
+    coopMyName = this.value.trim();
+    try { localStorage.setItem('coopMyName', coopMyName); } catch(e) {}
+  });
+  $('btn-history')?.addEventListener('click', openScoreboard);
   $('sb-close-btn').addEventListener('click', function() { $('sb-overlay').classList.remove('active'); });
   $('sb-clear-btn').addEventListener('click', function() {
     if (confirm('Clear all history for this tab?')) {
@@ -3670,7 +3887,7 @@ const Q = (function() {
     $('duel-sticky').style.display = 'none';
     $('coop-settings-bar').style.display = 'none';
     $('coop-sticky').style.display = 'none';
-    $('btn-history').style.display = 'none';
+    if ($('btn-history')) $('btn-history').style.display = 'none';
     $input.style.display = 'none';
     document.querySelector('.stats').style.display = 'none';
 
@@ -3770,24 +3987,244 @@ const Q = (function() {
     });
   }
 
+  console.log('NameEmAll WebSocket client starting...');
+  
   var urlParams = new URLSearchParams(window.location.search);
-  var _roomSession = getRoomSession();
-  var _duelParam = urlParams.get('duel');
-  var _coopParam = urlParams.get('coop');
+  
+  currentTab = 'coop';
+  
+  $('grid-wrap').innerHTML = '';
+  
+  var ws = null;
+  var wsConnected = false;
 
-  if (_roomSession && (_duelParam === _roomSession.roomId || _coopParam === _roomSession.roomId)) {
-    attemptReconnect(_roomSession);
-  } else {
-    if (_roomSession) clearRoomSession();
-    if (_duelParam) {
-      switchTab('duel');
-    } else if (_coopParam) {
-      switchTab('coop');
-    } else {
-      var _hash = window.location.hash.replace('#', '');
-      switchTab((_hash === 'duel' || _hash === 'coop') ? _hash : 'pokemon');
+  function wsConnect() {
+    console.log('Attempting WebSocket connection...');
+    var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(protocol + '//' + window.location.host);
+
+    ws.onopen = function() {
+      console.log('Connected to game server');
+      wsConnected = true;
+    };
+
+    ws.onmessage = function(event) {
+      var msg = JSON.parse(event.data);
+      if (msg.type === 'init' || msg.type === 'sync') {
+        wsHandleSync(msg);
+       } else if (msg.type === 'reveal') {
+         wsHandleReveal(msg);
+       }
+    };
+
+    ws.onclose = function() {
+      console.log('Disconnected from game server');
+      wsConnected = false;
+      setTimeout(wsConnect, 3000);
+    };
+
+    ws.onerror = function(err) {
+      console.error('WebSocket error:', err);
+    };
+  }
+
+  function wsSend(msg) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(msg));
     }
   }
+
+   function wsHandleSync(msg) {
+     coopSettings.shadows = msg.settings.shadows;
+     coopSettings.orderMode = msg.settings.orderMode;
+     coopSettings.timerMs = msg.settings.timerMs || 0;
+     coopSettings.gens = new Set(msg.settings.gens || [1,2,3,4,5,6,7,8,9]);
+     shadowsEnabled = msg.settings.shadows;
+     displayOrder = msg.displayOrder || [];
+      coopRevealed = new Set(msg.coopRevealed || []);
+      coopMembers = msg.coopMembers || {};
+     elapsedMs = msg.elapsedMs || 0;
+     paused = msg.paused || false;
+
+     if (!pokemonData) {
+       fetch('pokemon.json').then(r => r.json()).then(function(data) {
+         pokemonData = data;
+         wsStartGame();
+       });
+     } else {
+       wsStartGame();
+     }
+   }
+
+function wsStartGame() {
+  items = filterByGens(pokemonData, coopSettings.gens);
+  coopActive = true;
+  coopFinishMe = false;
+   coopFinishOpponent = false;
+   foundSet = new Set();
+   completedFamilies = new Set();
+   completedRegions = new Set();
+   coopMyName = localStorage.getItem('coopMyName') || '';
+   buildIndex();
+
+    $input.style.display = '';
+    $input.disabled = false;
+    $input.placeholder = 'Type a Pokémon name…';
+    $timer.textContent = '00:00';
+    $foundCount.textContent = coopRevealed.size.toString();
+    $('total-count').textContent = items.length;
+    document.querySelector('.stats').style.display = '';
+
+    wsRenderGrid();
+    wsUpdateScore();
+    startTimer();
+    if (cycleFormsEnabled) startCycleForms();
+    $input.focus();
+  }
+
+  function wsRenderGrid() {
+    var wrap = $('grid-wrap');
+    wrap.innerHTML = '';
+    wrap.classList.toggle('shadows-on', shadowsEnabled);
+
+    $('coop-sticky').style.display = '';
+    $('coop-finish-bar').style.display = 'none';
+    $('coop-finish-invite').style.display = 'none';
+    $('cs-total-count').textContent = items.length;
+    $('cs-found-count').textContent = coopRevealed.size;
+    $('cs-remaining-count').textContent = items.length - coopRevealed.size;
+
+    regionIndices = {};
+    if (coopSettings.orderMode === 'dex-gens') {
+      var groups = {};
+      for (var i = 0; i < displayOrder.length; i++) {
+        var idx = displayOrder[i], r = items[idx].g;
+        (groups[r] || (groups[r] = [])).push(idx);
+      }
+      for (var ri = 0; ri < REGION_ORDER.length; ri++) {
+        var region = REGION_ORDER[ri];
+        var list = groups[region];
+        if (!list || !list.length) continue;
+        regionIndices[region] = list;
+        var sec = document.createElement('div');
+        sec.className = 'region-section';
+        sec.id = 'rs-' + region;
+        var hdr = document.createElement('div');
+        hdr.className = 'region-header';
+        hdr.innerHTML = region + ' (Gen ' + REGION_GEN[region] + ') <span class="region-count" id="rc-' + region + '">0/' + list.length + '</span>';
+        sec.appendChild(hdr);
+        var grid = document.createElement('div');
+        grid.className = 'region-grid';
+        for (var li = 0; li < list.length; li++) grid.appendChild(makeCard(list[li]));
+        sec.appendChild(grid);
+        wrap.appendChild(sec);
+      }
+    } else {
+      var grid = document.createElement('div');
+      grid.className = 'region-grid';
+      for (var i = 0; i < displayOrder.length; i++) {
+        var idx = displayOrder[i], r = items[idx].g;
+        (regionIndices[r] || (regionIndices[r] = [])).push(idx);
+        grid.appendChild(makeCard(idx));
+      }
+      wrap.appendChild(grid);
+    }
+
+    coopRevealed.forEach(function(idx) { wsRevealCard(idx); });
+  }
+
+  function wsRevealCard(idx) {
+    var c = $('c' + idx);
+    if (!c) return;
+    c.className = 'card coop-found';
+    var w = items[idx];
+    c.querySelector('.poke-sprite').src = w.s;
+    c.querySelector('.poke-name').textContent = w.n;
+    c.querySelector('.poke-gen').textContent = w.g;
+    applyTypeBg(c, w);
+    addFormToggle(c, w);
+  }
+
+  function wsUpdateScore() {
+    var count = coopRevealed.size;
+    var el;
+    el = $('cs-found-count'); if (el) el.textContent = count;
+    el = $('cs-remaining-count'); if (el) el.textContent = items.length - count;
+    $foundCount.textContent = count;
+    if (coopSettings.orderMode === 'dex-gens') {
+      var regionCounts = {};
+      coopRevealed.forEach(function(i) { var r = items[i].g; regionCounts[r] = (regionCounts[r] || 0) + 1; });
+      REGION_ORDER.forEach(function(r) {
+        var rc = $('rc-' + r);
+        if (rc) {
+          var list = regionIndices[r];
+          var total = list ? list.length : 0;
+          var found = regionCounts[r] || 0;
+          rc.textContent = found + '/' + total;
+        }
+      });
+    }
+  }
+
+function wsHandleReveal(msg) {
+   var indices = msg.indices;
+   var userName = msg.userName || 'Anonymous';
+   var remoteNew = [];
+   for (var i = 0; i < indices.length; i++) {
+     var idx = indices[i];
+       if (!coopRevealed.has(idx)) {
+         coopRevealed.add(idx);
+         wsRevealCard(idx);
+         remoteNew.push(idx);
+         
+         if (userName && userName !== 'Anonymous') {
+         if (!coopMembers[userName]) {
+           coopMembers[userName] = [];
+         }
+         const pokemonId = items[idx].id;
+         if (!coopMembers[userName].includes(pokemonId)) {
+           coopMembers[userName].push(pokemonId);
+         }
+       }
+     }
+   }
+   if (remoteNew.length > 0) {
+     var prevPartner = document.querySelector('.card.coop-last-partner');
+     if (prevPartner) prevPartner.classList.remove('coop-last-partner');
+     var partnerCard = $('c' + remoteNew[remoteNew.length - 1]);
+     if (partnerCard) partnerCard.classList.add('coop-last-partner');
+     if (soundEnabled) playCry(items[remoteNew[0]].id);
+     checkFamilyComplete(remoteNew.map(function(i) { return items[i].id; }));
+     checkRegionComplete();
+   }
+   wsUpdateScore();
+   coopUpdateScore();
+   if (coopRevealed.size === items.length) { stopTimer(); wsHandleEnd(); }
+ }
+
+  function wsHandleEnd() {
+    stopCountdown();
+    coopActive = false;
+    stopTimer();
+    paused = false;
+    $('pause-overlay').classList.remove('active');
+    if (disconnectWaiting) { disconnectWaiting = false; $('disconnect-overlay').classList.remove('active'); }
+    var msg = { type: 'end' };
+    var mh = document.querySelector('.modal h2');
+    if (mh) mh.textContent = 'Game Complete!';
+    var mp = document.querySelector('.modal p');
+    if (mp) mp.textContent = 'You and your teammates found all ' + items.length + ' Pokémon!';
+    var mscore = $('modal-score');
+    if (mscore) mscore.textContent = items.length + ' / ' + items.length;
+    var mtime = $('modal-time');
+    if (mtime) mtime.textContent = 'Time: ' + formatTime(elapsedMs);
+    $overlay.classList.add('active');
+  }
+
+  var _coopParam = urlParams.get('coop');
+
+  wsConnect();
+
   if (cycleFormsEnabled) startCycleForms();
 
   return { closeModal: () => $overlay.classList.remove('active'), reset };
