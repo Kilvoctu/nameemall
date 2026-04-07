@@ -53,6 +53,92 @@ app.post('/admin/reset', (req, res) => {
   res.json({ status: 'ok', message: 'Game reset' });
 });
 
+app.post('/admin/assign', (req, res) => {
+  const { name, pokemon } = req.body;
+  
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ status: 'error', message: 'Missing or invalid "name" field' });
+  }
+  
+  if (!Array.isArray(pokemon) || pokemon.length === 0) {
+    return res.status(400).json({ status: 'error', message: 'Missing or invalid "pokemon" field' });
+  }
+  
+  if (!pokemonData || displayOrder.length === 0) {
+    return res.status(400).json({ status: 'error', message: 'No pokemon data loaded' });
+  }
+  
+  const items = filterByGens(pokemonData, coopSettings.gens);
+  let assignedCount = 0;
+  
+  for (const pokeName of pokemon) {
+    const pokeNameLower = pokeName.toLowerCase().trim();
+    
+    // Find pokemon by exact name (case-insensitive)
+    let foundIdx = -1;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].n.toLowerCase() === pokeNameLower) {
+        foundIdx = i;
+        break;
+      }
+    }
+    
+    if (foundIdx === -1) {
+      console.log(`Pokemon not found: ${pokeName}`);
+      continue;
+    }
+    
+    const pokemonId = items[foundIdx].id;
+    const actualIdx = displayOrder[foundIdx];
+    
+    // Remove from any existing discoverer (transfer ownership)
+    for (const memberName in coopMembers) {
+      const idx = coopMembers[memberName].indexOf(pokemonId);
+      if (idx !== -1) {
+        coopMembers[memberName].splice(idx, 1);
+        console.log(`Transferred ${pokeName} from ${memberName} to ${name}`);
+      }
+    }
+    
+    // Add to new member
+    if (!coopMembers[name]) {
+      coopMembers[name] = [];
+    }
+    if (!coopMembers[name].includes(pokemonId)) {
+      coopMembers[name].push(pokemonId);
+    }
+    
+    // Mark as revealed
+    coopRevealed.add(actualIdx);
+    assignedCount++;
+  }
+  
+  // Broadcast state to all clients
+  broadcastState();
+  
+  res.json({ status: 'ok', assigned: assignedCount });
+});
+
+app.get('/admin/assign', (req, res) => {
+  const members = [];
+  
+  for (const [name, pokemonIds] of Object.entries(coopMembers)) {
+    const items = filterByGens(pokemonData, coopSettings.gens);
+    const pokemonNames = pokemonIds
+      .map(id => {
+        const poke = items.find(p => p.id === id);
+        return poke ? poke.n : null;
+      })
+      .filter(n => n);
+    
+    if (pokemonNames.length > 0) {
+      members.push({ name, pokemon: pokemonNames });
+    }
+  }
+  
+  res.json({ members });
+});
+
 function resetGame() {
    coopRevealed = new Set();
    coopMembers = {}; // Reset member tracking

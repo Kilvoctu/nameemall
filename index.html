@@ -156,13 +156,13 @@ body.light .shadows-on .card.unrevealed .poke-sprite { opacity: 0.25; }
 .card.found .poke-placeholder { display: none; }
 .card.found .poke-sprite { filter: none; opacity: 1; position: static; }
 .card.found .poke-name { font-size: 0.48rem; color: var(--text); margin-top: 2px; font-weight: 600; }
-.card.found .poke-gen { font-size: 0.38rem; color: var(--text-dim); }
+.card.found .poke-gen { display: none; }
 .card.found[data-pid] { cursor: pointer; }
 
 .card.missed .poke-placeholder { display: none; }
 .card.missed .poke-sprite { filter: grayscale(1) opacity(0.5); opacity: 1; position: static; }
 .card.missed .poke-name { font-size: 0.48rem; color: var(--accent); opacity: 0.7; margin-top: 2px; font-weight: 600; }
-.card.missed .poke-gen { font-size: 0.38rem; color: var(--accent); opacity: 0.4; }
+.card.missed .poke-gen { display: none; }
 .card.missed[data-pid] { cursor: pointer; }
 
 .form-toggle { position: absolute; bottom: 2px; right: 2px; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); color: var(--text-pinyin); font-size: 0.42rem; font-weight: 800; padding: 1px 4px; border-radius: 3px; cursor: pointer; line-height: 1.2; z-index: 5; pointer-events: auto; transition: background 0.15s; }
@@ -390,7 +390,7 @@ footer a { color: var(--text-pinyin); text-decoration: none; }
 .card.duel-mine .poke-placeholder { display: none; }
 .card.duel-mine .poke-sprite { filter: none; opacity: 1; position: static; }
 .card.duel-mine .poke-name { font-size: 0.45rem; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 92%; text-align: center; }
-.card.duel-mine .poke-gen { font-size: 0.4rem; color: var(--text-dim); }
+.card.duel-mine .poke-gen { display: none; }
 .duel-finish-bar { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4px 0 6px; }
 .duel-finish-bar .btn { min-width: 100px; }
 .duel-finish-status { font-size: 0.72rem; color: var(--text-dim); }
@@ -482,7 +482,7 @@ footer a { color: var(--text-pinyin); text-decoration: none; }
 .card.coop-found .poke-placeholder { display: none; }
 .card.coop-found .poke-sprite { filter: none; opacity: 1; position: static; }
 .card.coop-found .poke-name { font-size: 0.45rem; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 92%; text-align: center; }
-.card.coop-found .poke-gen { font-size: 0.4rem; color: var(--text-dim); }
+.card.coop-found .poke-gen { display: none; }
 </style>
 </head>
 <body>
@@ -1189,9 +1189,6 @@ const Q = (function() {
     } else {
       c.querySelector('.poke-sprite').src = w.s;
       c.querySelector('.poke-name').textContent = w.n;
-      c.querySelector('.poke-gen').textContent = w.g;
-      addFormToggle(c, w);
-      applyTypeBg(c, w);
     }
   }
 
@@ -1207,9 +1204,6 @@ const Q = (function() {
     } else {
       c.querySelector('.poke-sprite').src = w.s;
       c.querySelector('.poke-name').textContent = w.n;
-      c.querySelector('.poke-gen').textContent = w.g;
-      addFormToggle(c, w);
-      applyTypeBg(c, w);
     }
   }
 
@@ -2369,7 +2363,6 @@ function showCoopMembersPopup() {
       c.className = 'card duel-mine ' + colorClass;
       c.querySelector('.poke-sprite').src = w.s;
       c.querySelector('.poke-name').textContent = w.n;
-      c.querySelector('.poke-gen').textContent = w.g;
       applyTypeBg(c, w);
       addFormToggle(c, w);
     } else {
@@ -3030,7 +3023,6 @@ function showCoopMembersPopup() {
     c.className = 'card coop-found';
     c.querySelector('.poke-sprite').src = w.s;
     c.querySelector('.poke-name').textContent = w.n;
-    c.querySelector('.poke-gen').textContent = w.g;
     applyTypeBg(c, w);
     addFormToggle(c, w);
   }
@@ -4140,7 +4132,6 @@ function wsStartGame() {
     var w = items[idx];
     c.querySelector('.poke-sprite').src = w.s;
     c.querySelector('.poke-name').textContent = w.n;
-    c.querySelector('.poke-gen').textContent = w.g;
     applyTypeBg(c, w);
     addFormToggle(c, w);
   }
