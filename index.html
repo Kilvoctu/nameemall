@@ -733,10 +733,11 @@ const Q = (function() {
     setTimeout(function() { $input.classList.remove('flash-amber'); }, 400);
   }
 
-  function toastDupe(w) {
+  function toastDupe(w, finderName) {
+    var finderText = finderName ? ' by ' + finderName : '';
     var el = document.createElement('div');
     el.className = 'toast toast-dupe';
-    el.innerHTML = '<img src="' + w.s + '" alt=""> ' + w.n + ' — already found!';
+    el.innerHTML = '<img src="' + w.s + '" alt=""> ' + w.n + ' — already found' + finderText + '!';
     $toasts.appendChild(el);
     setTimeout(function() { el.remove(); }, 2000);
   }
@@ -2398,13 +2399,6 @@ function showCoopMembersPopup() {
           var card = $('c' + newReveals[0]);
           if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 50);
-      } else {
-        var q = val.toLowerCase().trim();
-        if (!hasAnyExtension(q)) {
-          toastDupe(items[matches[0]]);
-          flashInputDupe();
-          $input.value = '';
-        }
       }
     } else if (val.length > 0) {
       var q = val.toLowerCase().trim();
@@ -3069,7 +3063,15 @@ function coopHandleInput(val) {
     } else {
       var q = val.toLowerCase().trim();
       if (!hasAnyExtension(q)) {
-        toastDupe(items[matches[0]]);
+        var dupeItem = items[matches[0]];
+        var finderName = null;
+        for (var name in coopMembers) {
+          if (coopMembers[name] && coopMembers[name].includes(dupeItem.id)) {
+            finderName = name;
+            break;
+          }
+        }
+        toastDupe(dupeItem, finderName);
         flashInputDupe();
         $input.value = '';
       }

@@ -140,6 +140,39 @@ app.get('/admin/assign', (req, res) => {
   res.json({ members });
 });
 
+app.post('/admin/timestamp', (req, res) => {
+  const { name, pokemon, timestamp } = req.body;
+  
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ status: 'error', message: 'Missing or invalid "name" field' });
+  }
+  
+  if (!pokemon || typeof pokemon !== 'string') {
+    return res.status(400).json({ status: 'error', message: 'Missing or invalid "pokemon" field' });
+  }
+  
+  if (!timestamp || typeof timestamp !== 'string') {
+    return res.status(400).json({ status: 'error', message: 'Missing or invalid "timestamp" field' });
+  }
+  
+  const parsedDate = new Date(timestamp);
+  if (isNaN(parsedDate.getTime())) {
+    return res.status(400).json({ status: 'error', message: 'Invalid timestamp format' });
+  }
+  
+  lastDiscovery = {
+    userName: name.trim(),
+    pokemonName: pokemon.trim(),
+    timestamp: parsedDate.getTime()
+  };
+  
+  console.log('Timestamp updated:', name.trim() + ' discovered ' + pokemon.trim() + ' at ' + timestamp);
+  
+  broadcastState();
+  
+  res.json({ status: 'ok', message: 'Timestamp updated' });
+});
+
 function resetGame() {
    coopRevealed = new Set();
    coopMembers = {}; // Reset member tracking
