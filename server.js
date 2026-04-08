@@ -14,6 +14,7 @@ let pokemonData = null;
 let displayOrder = [];
 let coopRevealed = new Set();
 let coopMembers = {}; // Track which user found which Pokemon
+let lastDiscovery = null; // { userName, pokemonName, timestamp }
 let elapsedMs = 0;
 let paused = false;
 let timerInterval = null;
@@ -196,6 +197,7 @@ function broadcastState() {
      },
      coopRevealed: Array.from(coopRevealed),
      coopMembers: coopMembers,
+     lastDiscovery: lastDiscovery,
      elapsedMs: elapsedMs,
      paused: paused
    };
@@ -217,8 +219,8 @@ function broadcastReveal(indices) {
    });
  }
 
-function broadcastRevealWithUser(indices, userName) {
-   const msg = JSON.stringify({ type: 'reveal', indices: Array.from(indices), userName: userName });
+function broadcastRevealWithUser(indices, userName, pokemonName) {
+   const msg = JSON.stringify({ type: 'reveal', indices: Array.from(indices), userName: userName, pokemonName: pokemonName });
    clients.forEach(client => {
      if (client.readyState === WebSocket.OPEN) {
        client.send(msg);
@@ -304,6 +306,7 @@ wss.on('connection', (ws) => {
       },
       coopRevealed: Array.from(coopRevealed),
       coopMembers: coopMembers,
+      lastDiscovery: lastDiscovery,
       elapsedMs: elapsedMs,
       paused: paused
     });
@@ -342,12 +345,15 @@ wss.on('connection', (ws) => {
              }
            }
            
-           if (newReveals.size > 0) {
-             // Broadcast reveal with user attribution
-             broadcastRevealWithUser(newReveals, msg.userName || 'Anonymous');
-             
-             const items = filterByGens(pokemonData, coopSettings.gens);
-             if (coopRevealed.size === items.length) {
+              if (newReveals.size > 0) {
+               // Broadcast reveal with user attribution
+               const items = filterByGens(pokemonData, coopSettings.gens);
+               const lastIdx = Array.from(newReveals).pop();
+               const lastPokeName = items[lastIdx]?.n || 'Unknown';
+               lastDiscovery = { userName: msg.userName || 'Anonymous', pokemonName: lastPokeName, timestamp: Date.now() };
+               broadcastRevealWithUser(newReveals, msg.userName || 'Anonymous', lastPokeName);
+               
+               if (coopRevealed.size === items.length) {
                if (timerInterval) {
                  clearInterval(timerInterval);
                  timerInterval = null;

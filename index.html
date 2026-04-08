@@ -402,9 +402,10 @@ footer a { color: var(--text-pinyin); text-decoration: none; }
 
 /* ── Co-Op Mode ── */
 .coop-sticky { padding: 6px 0 4px; border-top: 1px solid var(--border); margin-top: 6px; }
-.coop-score { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.coop-score { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums; flex-wrap: wrap; }
 .coop-score .cs-team { color: #34d399; }
 .coop-score .cs-neutral { color: var(--text-dim); }
+.coop-score .cs-discovery { color: var(--text-dim); margin-left: 15px; font-weight: normal; white-space: nowrap; width: 100%; text-align: center; margin-top: -8px; }
 .coop-name-input { background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.75rem; padding: 4px 8px; width: 110px; outline: none; }
 .coop-name-input:focus { border-color: var(--accent); }
 .coop-name-input::placeholder { color: var(--text-dim); }
@@ -545,6 +546,7 @@ footer a { color: var(--text-pinyin); text-decoration: none; }
       <button class="btn" id="coop-members-btn">Members</button>
       <span class="cs-team">🤝 Team: <span id="cs-found-count">0</span> / <span id="cs-total-count">0</span></span>
       <span class="cs-neutral">Remaining: <span id="cs-remaining-count">0</span></span>
+      <span id="cs-last-discovery" class="cs-discovery"></span>
     </div>
     <div class="duel-finish-bar" id="coop-finish-bar">
       <button class="btn" id="coop-pause-btn">⏸ Pause</button>
@@ -2629,6 +2631,7 @@ function showCoopMembersPopup() {
   let coopFinishOpponent = false;
   let coopMyName = '';
   let coopMembers = {};
+  let lastDiscovery = null;
   var coopSettings = { shadows: false, orderMode: 'dex-gens', timerMs: 0, gens: new Set([1,2,3,4,5,6,7,8,9]) };
   var coopConnTimeout = null;
 
@@ -3124,6 +3127,14 @@ function coopHandleInput(val) {
         checkRegionComplete();
       }
       coopUpdateScore();
+      console.log('reveal msg:', msg);
+      if (msg.pokemonName && msg.userName) {
+        var now = new Date();
+        var timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+        var discoveryEl = $('cs-last-discovery');
+        if (discoveryEl) discoveryEl.textContent = msg.userName + ' discovered ' + msg.pokemonName + ' at ' + timeStr;
+        lastDiscovery = { userName: msg.userName, pokemonName: msg.pokemonName, timestamp: now.getTime() };
+      }
       if (coopRevealed.size === items.length) { stopTimer(); coopEnd(); }
     } else if (msg.type === 'finish') {
       coopFinishOpponent = true;
@@ -3246,6 +3257,8 @@ function coopHandleInput(val) {
     shadowsEnabled = msg.settings.shadows;
     displayOrder = msg.displayOrder;
     coopRevealed = new Set(msg.coopRevealed);
+    coopMembers = msg.coopMembers || {};
+    lastDiscovery = msg.lastDiscovery || null;
     coopFinishMe = false;
     coopFinishOpponent = false;
     elapsedMs = msg.elapsedMs;
@@ -3272,6 +3285,11 @@ function coopHandleInput(val) {
 
       coopRevealed.forEach(function(idx) { coopRevealCard(idx); });
       coopUpdateScore();
+      if (lastDiscovery) {
+        var timeStr = new Date(lastDiscovery.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+        var discoveryEl = $('cs-last-discovery');
+        if (discoveryEl) discoveryEl.textContent = lastDiscovery.userName + ' discovered ' + lastDiscovery.pokemonName + ' at ' + timeStr;
+      }
       startTimer();
       if (msg.countdownRemaining > 0) startCountdown(msg.countdownRemaining);
       if (cycleFormsEnabled) startCycleForms();
@@ -4035,6 +4053,7 @@ function coopHandleInput(val) {
      displayOrder = msg.displayOrder || [];
       coopRevealed = new Set(msg.coopRevealed || []);
       coopMembers = msg.coopMembers || {};
+      lastDiscovery = msg.lastDiscovery || null;
      elapsedMs = msg.elapsedMs || 0;
      paused = msg.paused || false;
 
@@ -4069,6 +4088,11 @@ function wsStartGame() {
 
     wsRenderGrid();
     wsUpdateScore();
+    if (lastDiscovery) {
+      var timeStr = new Date(lastDiscovery.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+      var discoveryEl = $('cs-last-discovery');
+      if (discoveryEl) discoveryEl.textContent = lastDiscovery.userName + ' discovered ' + lastDiscovery.pokemonName + ' at ' + timeStr;
+    }
     startTimer();
     if (cycleFormsEnabled) startCycleForms();
     $input.focus();
@@ -4188,9 +4212,17 @@ function wsHandleReveal(msg) {
      checkFamilyComplete(remoteNew.map(function(i) { return items[i].id; }));
      checkRegionComplete();
    }
-   wsUpdateScore();
-   coopUpdateScore();
-   if (coopRevealed.size === items.length) { stopTimer(); wsHandleEnd(); }
+    wsUpdateScore();
+    coopUpdateScore();
+    if (msg.pokemonName && msg.userName) {
+      var now = new Date();
+      var timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+      var discoveryEl = $('cs-last-discovery');
+      if (discoveryEl) discoveryEl.textContent = msg.userName + ' discovered ' + msg.pokemonName + ' at ' + timeStr;
+      lastDiscovery = { userName: msg.userName, pokemonName: msg.pokemonName, timestamp: now.getTime() };
+    }
+    console.log('wsHandleReveal msg:', msg);
+    if (coopRevealed.size === items.length) { stopTimer(); wsHandleEnd(); }
  }
 
   function wsHandleEnd() {
